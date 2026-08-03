@@ -1,0 +1,18 @@
+cl-discord-self
+===============
+
+This project is a Common Lisp implementation informed by the protocol kernel
+and behavioral contracts of dolfies/discord.py-self.
+
+Upstream project: https://github.com/dolfies/discord.py-self
+Upstream license: MIT
+Upstream copyright notice: Copyright (c) 2015-present Rapptz
+
+The exact compatibility baseline, translated-module inventory, generator
+version, and source digests are recorded in the compatibility manifest once
+Issue #2 pins an immutable upstream commit.
+
+No upstream implementation module has been translated into this repository in
+the Phase 0 bootstrap revision. Files added before the compatibility pin are
+original repository scaffolding and contract definitions derived from the
+approved StarIntel design documents.
