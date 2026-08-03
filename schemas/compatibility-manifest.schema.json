@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starintel.actor/schemas/cl-discord-self/compatibility-manifest-v1.json",
+  "title": "cl-discord-self compatibility manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile",
+    "upstream_repository",
+    "upstream_commit",
+    "gateway_version",
+    "transport",
+    "supported_events",
+    "supported_http_operations",
+    "generator"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "upstream_repository": {
+      "const": "dolfies/discord.py-self"
+    },
+    "upstream_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "gateway_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "source_revision", "profile_name"],
+      "properties": {
+        "family": {"type": "string", "minLength": 1},
+        "source_revision": {"type": "string", "minLength": 1},
+        "profile_name": {"type": "string", "minLength": 1}
+      }
+    },
+    "supported_events": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "supported_http_operations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "source_modules", "output_digest"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "source_modules": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "output_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
