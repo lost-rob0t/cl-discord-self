@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starintel.actor/schemas/cl-discord-self/replay-record-v1.json",
+  "title": "cl-discord-self replay transcript record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["direction", "kind", "at_ms"],
+  "properties": {
+    "direction": {
+      "enum": ["in", "out"]
+    },
+    "kind": {
+      "enum": ["ws", "http", "control"]
+    },
+    "at_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operation_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["text", "binary", "continuation", "final"]
+      }
+    },
+    "payload_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "match_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event": {
+      "enum": ["open", "close", "cancel", "error", "runtime-stopped"]
+    },
+    "close_code": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "stable_code": {
+      "type": "integer",
+      "maximum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"kind": {"const": "ws"}},
+        "required": ["kind"]
+      },
+      "then": {
+        "anyOf": [
+          {"required": ["payload_ref"]},
+          {"required": ["match_ref"]},
+          {"required": ["event"]}
+        ]
+      }
+    }
+  ]
+}
