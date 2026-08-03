@@ -20,7 +20,7 @@ Repository instructions and explicit issue decisions override general assumption
 
 ## Forge Loop
 
-Use Issue-Driven Agentic Development: spec -> issue -> branch -> implementation -> tests -> PR -> independent review -> merge -> next issue.
+Use Issue-Driven Agentic Development: spec -> issue -> branch -> implementation -> tests -> PR -> checks -> merge -> next issue.
 
 1. Select exactly one open, unblocked issue whose dependencies are merged.
 2. Claim it with a concise issue comment stating the intended slice and validation plan.
@@ -30,12 +30,28 @@ Use Issue-Driven Agentic Development: spec -> issue -> branch -> implementation 
 6. Add or update regression tests with the implementation.
 7. Run all relevant format, lint, compile, unit, replay, compatibility, integration, and Nix checks available for the changed boundary.
 8. Review the complete diff for architecture violations, secrets, generated-file drift, unbounded work, hidden global state, and accidental API expansion.
-9. Commit intentionally, push the issue branch, and open a draft PR linked to the issue.
-10. Obtain independent review. The implementer must not treat self-review as the review gate.
-11. Merge only when the task explicitly authorizes it and required checks and review gates pass. Close the issue only after the merged result satisfies its exit gate.
-12. Start the next issue from the updated base branch. Never stack unrelated issue work on an unmerged branch.
+9. Commit intentionally, push the issue branch, and open a pull request linked to the issue. Draft status is only for genuinely incomplete or blocked work.
+10. Resolve every blocking review thread and explicit blocker. Non-blocking comments and the absence of ceremonial approval do not delay a green merge.
+11. When the current PR head is mergeable, all required checks are green, and no blocking thread, explicit blocker, or dependency conflict remains, merge immediately. If repository auto-merge is unavailable, merge directly using the verified current head SHA.
+12. Close the issue only when the merged result satisfies its exit gate, then start the next issue from the updated base branch. Never stack unrelated issue work on an unmerged branch.
 
 Only merged changes update repository truth. Draft work, local notes, and unmerged PR claims are not durable project memory.
+
+## Merge-on-green policy
+
+Merge-on-green is the default operating mode for agent-authored pull requests.
+
+A PR must be merged without additional waiting when all of the following are true:
+
+- the PR is open, non-draft, and GitHub reports it mergeable;
+- the exact current head SHA has completed every required CI check successfully;
+- the branch is based on the intended target and has no dependency conflict;
+- there are no unresolved blocking review threads or explicitly recorded blockers;
+- the diff contains no discovered secret, architecture violation, destructive migration, or unrelated work.
+
+Do not invent a review gate, wait for ceremonial approval, or leave a green mergeable PR idle. A self-review may verify the merge conditions; it must not be represented as independent approval. When repository-level auto-merge is disabled, call the direct merge operation immediately after verifying the conditions and pass the expected head SHA whenever the tool supports it.
+
+If CI fails, the head changes, GitHub reports a conflict, or a blocker appears, do not merge. Fix or record the blocker, rerun the required checks, and apply this policy again to the new head.
 
 ## Work-state rules
 
@@ -136,4 +152,4 @@ Every PR description must include:
 - generated or pinned-input changes;
 - remaining risks or follow-up issues.
 
-Reviewers must verify behavior, tests, boundary compliance, secret handling, deterministic output, and that the diff contains no unrelated work.
+Reviewers must verify behavior, tests, boundary compliance, secret handling, deterministic output, and that the diff contains no unrelated work. Blocking review findings must be marked explicitly; advisory comments do not suspend merge-on-green.
