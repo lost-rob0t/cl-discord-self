@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starintel.actor/schemas/cl-discord-self/fixture-set-v1.json",
+  "title": "cl-discord-self deterministic fixture set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "profile",
+    "clock_mode",
+    "records",
+    "expected_outputs"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "profile": {"type": "string", "minLength": 1},
+    "clock_mode": {
+      "enum": ["real-time", "accelerated", "virtual"]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "replay-record.schema.json"
+      }
+    },
+    "expected_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "ref", "sha256"],
+        "properties": {
+          "kind": {
+            "enum": ["dispatch-event", "checkpoint", "condition", "http-result", "transcript"]
+          },
+          "ref": {"type": "string", "minLength": 1},
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    }
+  }
+}
