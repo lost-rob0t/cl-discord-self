@@ -6,7 +6,8 @@
   :serial t
   :components ((:file "src/packages")
                (:file "src/conditions")
-               (:file "src/core")))
+               (:file "src/core")
+               (:file "src/client")))
 
 (asdf:defsystem "cl-discord-self"
   :description "Bounded read-only Discord user-session protocol library."
