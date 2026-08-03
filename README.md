@@ -4,7 +4,7 @@ A standalone Common Lisp library for bounded Discord user-session protocol handl
 
 ## Status
 
-Phase 0: repository and contract bootstrap. There is no live Discord transport or account integration in the repository yet.
+The first executable client core is under development. It provides an actor-style client lifecycle, transport protocol, deterministic replay transport, immutable dispatch events, ordered polling, sequence tracking, and clean shutdown. Native HTTP/WebSocket and live Discord connectivity are not implemented yet.
 
 The initial compatibility profile is read-only and fixture-first:
 
@@ -17,15 +17,40 @@ The initial compatibility profile is read-only and fixture-first:
 
 The library is not tied to StarIntel. Downstream applications own authorization, collection scope, storage, normalization, and publication.
 
+## Client core
+
+The replay transport exercises the same client surface that the native Gateway transport will implement:
+
+```common-lisp
+(let* ((transport
+         (cl-discord-self:make-replay-transport
+          (list
+           (list :type :dispatch
+                 :name "READY"
+                 :sequence 1
+                 :payload (list :session-id "fixture-session")
+                 :raw "{\"op\":0,\"t\":\"READY\",\"s\":1}"))))
+       (client (cl-discord-self:make-client transport)))
+  (cl-discord-self:start-client client)
+  (cl-discord-self:run-client client)
+  (let ((event (cl-discord-self:poll-event client)))
+    (format t "~A ~A~%"
+            (cl-discord-self:dispatch-event-name event)
+            (cl-discord-self:dispatch-event-id event)))
+  (cl-discord-self:stop-client client))
+```
+
+`run-client` is bounded by `:max-steps`. `client-step` processes one mailbox or transport message, making the loop usable from a supervisor actor or an application-owned scheduler.
+
 ## Architecture
 
 The implementation is split into three independently testable layers:
 
 1. `libcldiscordcurl`: stable, poll-based native transport ABI;
-2. `cl-discord-self`: Common Lisp protocol, model, event, state, fixture, and compatibility systems;
+2. `cl-discord-self`: Common Lisp client, protocol, model, event, state, fixture, and compatibility systems;
 3. downstream adapters: application policy and durable side effects.
 
-No native worker thread may call arbitrary Lisp code. The Lisp runtime polls bounded native events and routes immutable values to owning components.
+No native worker thread may call arbitrary Lisp code. The Lisp runtime polls bounded native events and routes immutable values to the owning client component.
 
 ## Non-goals for the initial profile
 
