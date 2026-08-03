@@ -73,3 +73,39 @@
      (format stream
              "cl-discord-self native transport failure: code ~D"
              (native-error-code condition)))))
+
+(define-condition client-state-error (discord-error)
+  ((state
+    :initarg :state
+    :reader condition-state)
+   (operation
+    :initarg :operation
+    :reader condition-operation))
+  (:report
+   (lambda (condition stream)
+     (format stream
+             "Client operation ~S is invalid while the client is ~S"
+             (condition-operation condition)
+             (condition-state condition)))))
+
+(define-condition transport-state-error (discord-error)
+  ((state
+    :initarg :state
+    :reader condition-state)
+   (operation
+    :initarg :operation
+    :reader condition-operation))
+  (:report
+   (lambda (condition stream)
+     (format stream
+             "Transport operation ~S is invalid while the transport is ~S"
+             (condition-operation condition)
+             (condition-state condition)))))
+
+(define-condition protocol-frame-error (discord-error)
+  ((frame
+    :initarg :frame
+    :reader condition-frame))
+  (:report
+   (lambda (condition stream)
+     (format stream "Invalid protocol frame: ~S" (condition-frame condition)))))
