@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starintel.actor/schemas/cl-discord-self/dispatch-event-v1.json",
+  "title": "cl-discord-self dispatch event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "name",
+    "account_id",
+    "received_at",
+    "raw_octets_base64",
+    "raw_json_digest",
+    "parse_warnings",
+    "unknown_fields",
+    "transport_version",
+    "client_context_id"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "sequence": {
+      "oneOf": [
+        {"type": "integer", "minimum": 0},
+        {"type": "null"}
+      ]
+    },
+    "session_id": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "account_id": {"type": "string", "pattern": "^[0-9]+$"},
+    "received_at": {"type": "string", "format": "date-time"},
+    "raw_octets_base64": {
+      "type": "string",
+      "contentEncoding": "base64"
+    },
+    "raw_json_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "parsed_value": true,
+    "parse_warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "unknown_fields": {
+      "type": "object"
+    },
+    "transport_version": {"type": "string", "minLength": 1},
+    "client_context_id": {"type": "string", "minLength": 1}
+  }
+}
