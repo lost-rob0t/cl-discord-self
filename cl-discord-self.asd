@@ -22,7 +22,7 @@
   :license "MIT"
   :depends-on ("cl-discord-self/core")
   :serial t
-  :components ((:file "tests/smoke"))
+  :components ((:file "tests/unit/smoke"))
   :perform (asdf:test-op (operation component)
              (declare (ignore operation component))
              (unless (uiop:symbol-call :cl-discord-self.tests :run-tests)
