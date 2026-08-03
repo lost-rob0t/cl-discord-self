@@ -55,6 +55,7 @@ typedef enum cdc_ws_frame_flag {
 } cdc_ws_frame_flag;
 
 typedef struct cdc_runtime_options {
+  uint32_t struct_size;
   uint32_t abi_version;
   uint32_t event_queue_capacity;
   uint32_t max_http_connections;
@@ -64,6 +65,7 @@ typedef struct cdc_runtime_options {
 } cdc_runtime_options;
 
 typedef struct cdc_http_request {
+  uint32_t struct_size;
   const char *method;
   const char *url;
   const uint8_t *headers_json;
@@ -76,6 +78,7 @@ typedef struct cdc_http_request {
 } cdc_http_request;
 
 typedef struct cdc_ws_request {
+  uint32_t struct_size;
   const char *url;
   const uint8_t *headers_json;
   size_t headers_json_len;
@@ -84,7 +87,8 @@ typedef struct cdc_ws_request {
 } cdc_ws_request;
 
 typedef struct cdc_event {
-  cdc_event_type type;
+  uint32_t struct_size;
+  uint32_t type;
   uint64_t operation_id;
   int32_t stable_code;
   int32_t native_code;
@@ -93,6 +97,24 @@ typedef struct cdc_event {
   const uint8_t *data;
   size_t data_len;
 } cdc_event;
+
+#define CDC_RUNTIME_OPTIONS_V1_SIZE ((uint32_t)sizeof(cdc_runtime_options))
+#define CDC_HTTP_REQUEST_V1_SIZE ((uint32_t)sizeof(cdc_http_request))
+#define CDC_WS_REQUEST_V1_SIZE ((uint32_t)sizeof(cdc_ws_request))
+#define CDC_EVENT_V1_SIZE ((uint32_t)sizeof(cdc_event))
+
+/*
+ * Public struct versioning
+ * ------------------------
+ * Callers zero-initialize every input struct and set struct_size to the matching
+ * CDC_*_V1_SIZE constant. Libraries accept a struct at least as large as the
+ * v1 prefix they understand and ignore zeroed trailing fields. Library-created
+ * events set struct_size to the number of bytes actually available.
+ *
+ * Enum declarations provide named constants only. Public struct fields and
+ * function results use fixed-width integer types so compiler enum-size choices
+ * cannot change the ABI.
+ */
 
 /*
  * Version strings are immutable, process-lifetime, UTF-8, NUL-terminated
@@ -107,8 +129,8 @@ const char *cdc_native_curl_version(void);
  * runtime to out_runtime. On failure, out_runtime is set to null and the caller
  * retains ownership of every option and pointed-to byte.
  */
-int cdc_runtime_create(const cdc_runtime_options *options,
-                       cdc_runtime **out_runtime);
+int32_t cdc_runtime_create(const cdc_runtime_options *options,
+                           cdc_runtime **out_runtime);
 
 /*
  * The first shutdown call atomically stops intake and starts cancellation.
@@ -121,7 +143,7 @@ int cdc_runtime_create(const cdc_runtime_options *options,
  * deadline. New submissions return CDC_ERR_RUNTIME_STOPPING after shutdown
  * begins.
  */
-int cdc_runtime_shutdown(cdc_runtime *runtime, uint32_t deadline_ms);
+int32_t cdc_runtime_shutdown(cdc_runtime *runtime, uint32_t deadline_ms);
 
 /*
  * A non-null runtime may be destroyed only after shutdown returned CDC_OK, the
@@ -130,30 +152,31 @@ int cdc_runtime_shutdown(cdc_runtime *runtime, uint32_t deadline_ms);
  */
 void cdc_runtime_destroy(cdc_runtime *runtime);
 
-int cdc_http_submit(cdc_runtime *runtime,
-                    const cdc_http_request *request,
-                    cdc_request_id *out_request_id);
+/* Accepted operation identifiers are nonzero. Output identifiers are zeroed on failure. */
+int32_t cdc_http_submit(cdc_runtime *runtime,
+                        const cdc_http_request *request,
+                        cdc_request_id *out_request_id);
 
 /*
  * A successful cancellation request does not synchronously free caller-visible
  * state. The operation still produces exactly one terminal event. If normal
  * completion wins the race, that normal terminal event is authoritative.
  */
-int cdc_http_cancel(cdc_runtime *runtime, cdc_request_id request_id);
+int32_t cdc_http_cancel(cdc_runtime *runtime, cdc_request_id request_id);
 
-int cdc_ws_open(cdc_runtime *runtime,
-                const cdc_ws_request *request,
-                cdc_socket_id *out_socket_id);
-int cdc_ws_send(cdc_runtime *runtime,
-                cdc_socket_id socket_id,
-                uint32_t frame_flags,
-                const uint8_t *payload,
-                size_t payload_len);
-int cdc_ws_close(cdc_runtime *runtime,
-                 cdc_socket_id socket_id,
-                 uint16_t close_code,
-                 const uint8_t *reason,
-                 size_t reason_len);
+int32_t cdc_ws_open(cdc_runtime *runtime,
+                    const cdc_ws_request *request,
+                    cdc_socket_id *out_socket_id);
+int32_t cdc_ws_send(cdc_runtime *runtime,
+                    cdc_socket_id socket_id,
+                    uint32_t frame_flags,
+                    const uint8_t *payload,
+                    size_t payload_len);
+int32_t cdc_ws_close(cdc_runtime *runtime,
+                     cdc_socket_id socket_id,
+                     uint16_t close_code,
+                     const uint8_t *reason,
+                     size_t reason_len);
 
 /*
  * out_event must be non-null. cdc_poll sets *out_event to null before waiting.
@@ -165,9 +188,9 @@ int cdc_ws_close(cdc_runtime *runtime,
  * events are never silently dropped because non-terminal traffic filled the
  * queue.
  */
-int cdc_poll(cdc_runtime *runtime,
-             uint32_t timeout_ms,
-             cdc_event **out_event);
+int32_t cdc_poll(cdc_runtime *runtime,
+                 uint32_t timeout_ms,
+                 cdc_event **out_event);
 
 /* Passing null is a no-op. A non-null event must be freed exactly once. */
 void cdc_event_free(cdc_event *event);
