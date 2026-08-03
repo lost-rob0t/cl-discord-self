@@ -30,17 +30,48 @@
         } ''
           cat > smoke.c <<'EOF'
           #include "${self}/native/include/cldiscordcurl.h"
+
           _Static_assert(CDC_ABI_VERSION == 1u, "ABI version must be one");
           _Static_assert(CDC_ERR_INTERNAL_NATIVE_FAILURE < 0,
                          "stable errors must be negative");
+          _Static_assert(offsetof(cdc_runtime_options, struct_size) == 0,
+                         "struct_size must lead public input structs");
+          _Static_assert(offsetof(cdc_http_request, struct_size) == 0,
+                         "struct_size must lead HTTP requests");
+          _Static_assert(offsetof(cdc_ws_request, struct_size) == 0,
+                         "struct_size must lead WebSocket requests");
+          _Static_assert(offsetof(cdc_event, struct_size) == 0,
+                         "struct_size must lead events");
+          _Static_assert(sizeof(((cdc_event *)0)->type) == sizeof(uint32_t),
+                         "event type must have fixed width");
+
           int main(void) {
             cdc_runtime_options options = {0};
+            options.struct_size = CDC_RUNTIME_OPTIONS_V1_SIZE;
             options.abi_version = CDC_ABI_VERSION;
-            return options.abi_version == 1u ? 0 : 1;
+            return options.struct_size == sizeof(options) ? 0 : 1;
           }
           EOF
+
+          cat > smoke.cpp <<'EOF'
+          #include "${self}/native/include/cldiscordcurl.h"
+
+          static_assert(CDC_ABI_VERSION == 1u, "ABI version must be one");
+          static_assert(CDC_EVENT_V1_SIZE == sizeof(cdc_event),
+                        "event size macro must match the C++ layout");
+
+          int main() {
+            cdc_runtime_options options{};
+            options.struct_size = CDC_RUNTIME_OPTIONS_V1_SIZE;
+            options.abi_version = CDC_ABI_VERSION;
+            return options.struct_size == sizeof(options) ? 0 : 1;
+          }
+          EOF
+
           cc -std=c11 -Wall -Wextra -Werror -pedantic \
             -fsyntax-only smoke.c
+          c++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -fsyntax-only smoke.cpp
           touch "$out"
         '';
 
