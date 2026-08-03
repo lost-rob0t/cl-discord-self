@@ -94,18 +94,51 @@ typedef struct cdc_event {
   size_t data_len;
 } cdc_event;
 
+/*
+ * Version strings are immutable, process-lifetime, UTF-8, NUL-terminated
+ * storage owned by the library. The caller must not free or modify them.
+ */
 uint32_t cdc_abi_version(void);
 const char *cdc_runtime_version(void);
 const char *cdc_native_curl_version(void);
 
+/*
+ * On success, create copies all pointed-to option strings and writes a non-null
+ * runtime to out_runtime. On failure, out_runtime is set to null and the caller
+ * retains ownership of every option and pointed-to byte.
+ */
 int cdc_runtime_create(const cdc_runtime_options *options,
                        cdc_runtime **out_runtime);
+
+/*
+ * The first shutdown call atomically stops intake and starts cancellation.
+ * Every accepted operation produces exactly one terminal event. The
+ * CDC_EVENT_RUNTIME_STOPPED event is queued last and no event follows it.
+ *
+ * CDC_OK means all native threads are joined and no more events can be
+ * produced. CDC_ERR_TIMEOUT leaves the runtime in the stopping state; the
+ * caller may continue polling and call shutdown again with another bounded
+ * deadline. New submissions return CDC_ERR_RUNTIME_STOPPING after shutdown
+ * begins.
+ */
 int cdc_runtime_shutdown(cdc_runtime *runtime, uint32_t deadline_ms);
+
+/*
+ * A non-null runtime may be destroyed only after shutdown returned CDC_OK, the
+ * caller observed and freed CDC_EVENT_RUNTIME_STOPPED, and every previously
+ * returned event was freed. Passing null is a no-op.
+ */
 void cdc_runtime_destroy(cdc_runtime *runtime);
 
 int cdc_http_submit(cdc_runtime *runtime,
                     const cdc_http_request *request,
                     cdc_request_id *out_request_id);
+
+/*
+ * A successful cancellation request does not synchronously free caller-visible
+ * state. The operation still produces exactly one terminal event. If normal
+ * completion wins the race, that normal terminal event is authoritative.
+ */
 int cdc_http_cancel(cdc_runtime *runtime, cdc_request_id request_id);
 
 int cdc_ws_open(cdc_runtime *runtime,
@@ -122,25 +155,41 @@ int cdc_ws_close(cdc_runtime *runtime,
                  const uint8_t *reason,
                  size_t reason_len);
 
+/*
+ * out_event must be non-null. cdc_poll sets *out_event to null before waiting.
+ * CDC_OK returns exactly one non-null event. CDC_ERR_TIMEOUT returns no event.
+ * Other errors also return no event.
+ *
+ * Queue capacity is bounded. The implementation reserves delivery capacity for
+ * accepted operations' terminal events and CDC_EVENT_RUNTIME_STOPPED; terminal
+ * events are never silently dropped because non-terminal traffic filled the
+ * queue.
+ */
 int cdc_poll(cdc_runtime *runtime,
              uint32_t timeout_ms,
              cdc_event **out_event);
+
+/* Passing null is a no-op. A non-null event must be freed exactly once. */
 void cdc_event_free(cdc_event *event);
 
 /*
- * Ownership contract
- * ------------------
- * Submission inputs remain owned by the caller for the duration of the call.
- * The runtime copies every accepted input before returning CDC_OK.
+ * Ownership and data contract
+ * ---------------------------
+ * Runtime options and operation submission inputs remain owned by the caller
+ * for the duration of the call. The runtime copies every accepted string and
+ * byte range before returning CDC_OK. A pointer may be null only when its
+ * corresponding length is zero, except documented optional NUL-terminated
+ * strings in cdc_runtime_options.
  *
  * A non-null event returned by cdc_poll is owned by the caller until exactly
- * one call to cdc_event_free. Event payload pointers remain valid only until
- * that event is freed.
+ * one call to cdc_event_free. Event data is immutable. event->data is null if
+ * and only if event->data_len is zero, and remains valid only until that event
+ * is freed. Freeing an event never frees or changes its runtime.
  *
- * Runtime shutdown stops intake, cancels outstanding operations, emits
- * terminal events, and joins native threads before destruction is permitted.
- * No authorization header, token, cookie, message body, or proxy password may
- * appear in native error strings.
+ * Stable error codes cross the ABI. Native error codes are diagnostic only and
+ * must not be used as portable control flow. No authorization header, token,
+ * cookie, message body, proxy password, or other secret may appear in native
+ * diagnostics, version strings, or event error payloads.
  */
 
 #ifdef __cplusplus
