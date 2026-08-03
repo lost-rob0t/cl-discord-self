@@ -1,0 +1,42 @@
+#+title: cl-discord-self Porting Inventory
+
+* Purpose
+
+This file records which repository files translate, adapt, generate from, or
+only test behavior originating in =dolfies/discord.py-self=.
+
+The inventory is part of the compatibility contract. A file that substantially
+translates one upstream module must name the upstream path and pinned commit.
+Generated output must name the generator version, source paths, and digest.
+
+* Current baseline
+
+- Compatibility profile: not pinned; tracked by GitHub Issue #2.
+- Upstream repository: =dolfies/discord.py-self=.
+- Upstream commit: intentionally absent until Issue #2 selects an immutable revision.
+- Translated implementation modules: none.
+- Generated model files: none.
+- Python production dependency: none permitted.
+
+* Inventory format
+
+Each future entry must include:
+
+| Field | Meaning |
+|-------+---------|
+| Repository path | File in =cl-discord-self= |
+| Kind | original, translated, adapted, generated, fixture, or oracle |
+| Upstream path | Source module or fixture path, when applicable |
+| Upstream commit | Full immutable Git commit |
+| Generator | Generator name and version, when applicable |
+| Digest | Reproducible output or source digest |
+| Notes | Intentional semantic differences and review reference |
+
+* Rules
+
+1. Do not record a branch name where an immutable commit is required.
+2. Do not mechanically reproduce the Python inheritance tree.
+3. Preserve upstream copyright and MIT terms in substantial translations.
+4. Keep Python in compatibility tooling only; production systems must load without it.
+5. Record intentional semantic differences in fixtures and review history.
+6. Update this inventory in the same pull request that adds translated or generated code.
